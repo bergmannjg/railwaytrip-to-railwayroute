@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+      "skipLibCheck": true,
+      "allowJs": false,
+      "allowSyntheticDefaultImports": true,
+      "isolatedModules": false,
+      "moduleResolution": "node",
+      "noEmit": false,
+      "strict": true,
+      "target": "ES5",
+      "resolveJsonModule": true,
+      "noImplicitAny": false,
+      "outDir": "dist",
+      "module": "commonjs",
+      "sourceMap": true,
+      "declaration": true
+  },
+  "include": [
+      "src/*"
+  ]
+}
