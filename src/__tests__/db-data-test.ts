@@ -1,5 +1,16 @@
 import { findRailwayRoutesOfTrip, findRailwayRoutePositionForRailwayRoutes } from '../db-data-railway-routes'
 
+test('test Norden Jever', () => {
+    const stops = [8000800, 8003124]; // route has closure
+    const railwayRoutes = findRailwayRoutesOfTrip(stops, false).railwayRoutes;
+    expect(railwayRoutes.length).toBe(5);
+    expect(railwayRoutes[0].railwayRouteNr).toBe(1570);
+    expect(railwayRoutes[1].railwayRouteNr).toBe(2931);
+    expect(railwayRoutes[2].railwayRouteNr).toBe(1520);
+    expect(railwayRoutes[3].railwayRouteNr).toBe(1522);
+    expect(railwayRoutes[4].railwayRouteNr).toBe(1540);
+});
+
 test('test Oldenburg Emden', () => {
     const stops = [8000291, 8000770, 8004610, 8000664, 8000225, 8001768];
     const railwayRoutes = findRailwayRoutesOfTrip(stops, false).railwayRoutes;

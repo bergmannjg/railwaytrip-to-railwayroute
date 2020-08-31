@@ -1,4 +1,4 @@
-import { computeDistanceOfKmI, findBetriebsstellenWithRailwayRoutePositionsForDS100Pattern, findRailwayRoute, findBetriebsstellenWithRailwayRoutePositionsForRailwayRouteNr, findCrossingsOfBetriebsstellenWithRailwayRoutePositionsForDS100, findStopForUicRef } from './db-data'
+import { hasRouteClosure, computeDistanceOfKmI, findBetriebsstellenWithRailwayRoutePositionsForDS100Pattern, findRailwayRoute, findBetriebsstellenWithRailwayRoutePositionsForRailwayRouteNr, findCrossingsOfBetriebsstellenWithRailwayRoutePositionsForDS100, findStopForUicRef } from './db-data'
 import type { RailwayRoutePosition, StopWithRailwayRoutePositions, BetriebsstelleRailwayRoutePosition } from './db-data'
 import { addStopToGraph } from './db-data-graph'
 import { Dijkstra } from './dijkstra'
@@ -224,10 +224,14 @@ function findRailwayRoutesFromPath(state: State, hs_pos_von: StopWithRailwayRout
 function findRailwayRoutesFromIntersections(state: State, hs_pos_von: StopWithRailwayRoutePositions, hs_pos_bis: StopWithRailwayRoutePositions): State {
     const intersection = hs_pos_von.streckenpositionen.find(a => hs_pos_bis.streckenpositionen.find(b => a.STRECKE_NR === b.STRECKE_NR));
     if (intersection) {
-        state.success = true;
-        if (verbose) console.log('found intersection: ', hs_pos_von.ds100_ref, intersection.STRECKE_NR, hs_pos_bis.ds100_ref)
+        const stopFrom = buildStopWithRailwayRoutePosition(intersection.STRECKE_NR, hs_pos_von);
+        const stopTo = buildStopWithRailwayRoutePosition(intersection.STRECKE_NR, hs_pos_bis);
+        if (stopFrom.railwayRoutePosition && stopTo.railwayRoutePosition && !hasRouteClosure(intersection.STRECKE_NR, stopFrom.railwayRoutePosition.KM_I, stopTo.railwayRoutePosition.KM_I)) {
+            state.success = true;
+            if (verbose) console.log('found intersection: ', hs_pos_von.ds100_ref, intersection.STRECKE_NR, hs_pos_bis.ds100_ref)
 
-        addToState(state, intersection.STRECKE_NR, buildStopWithRailwayRoutePosition(intersection.STRECKE_NR, hs_pos_von), buildStopWithRailwayRoutePosition(intersection.STRECKE_NR, hs_pos_bis), 'intersection')
+            addToState(state, intersection.STRECKE_NR, stopFrom, stopTo, 'intersection')
+        }
     }
     return state;
 }

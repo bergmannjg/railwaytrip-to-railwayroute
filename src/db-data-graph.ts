@@ -1,6 +1,6 @@
 import type { Graph } from './dijkstra'
 
-import { computeDistanceOfKmI, getDs100ValuesForCrossingsOfBetriebsstellenWithRailwayRoutePositions, findCrossingsOfBetriebsstellenWithRailwayRoutePositionsForRailwayRouteNr, findCrossingsOfBetriebsstellenWithRailwayRoutePositionsForDS100, findStreckennutzungGeschwindigkeitForRailwayRouteNr } from './db-data'
+import { hasRouteClosure, computeDistanceOfKmI, getDs100ValuesForCrossingsOfBetriebsstellenWithRailwayRoutePositions, findCrossingsOfBetriebsstellenWithRailwayRoutePositionsForRailwayRouteNr, findCrossingsOfBetriebsstellenWithRailwayRoutePositionsForDS100, findStreckennutzungGeschwindigkeitForRailwayRouteNr } from './db-data'
 import type { StopWithRailwayRoutePositions, BetriebsstelleRailwayRoutePosition } from './db-data'
 
 /** assumes arr is ordered */
@@ -38,21 +38,25 @@ function addToGraph(g: Graph, bsOfK: BetriebsstelleRailwayRoutePosition, positio
     const kmPerMin = speed / 60;
     const indexes = findPrevAndNext(positions, bsOfK.KM_I);
     if (indexes[0]) {
-        const d = computeDistanceOfBs(bsOfK, indexes[0]) / 100;
-        const travelTimeInMinutes = parseInt((d / kmPerMin).toFixed(0), 10);
-        g[bsOfK.KUERZEL][indexes[0].KUERZEL] = travelTimeInMinutes > 0 ? travelTimeInMinutes : 1;
-        if (twoWay) {
-            if (!g[indexes[0].KUERZEL]) g[indexes[0].KUERZEL] = {}
-            g[indexes[0].KUERZEL][bsOfK.KUERZEL] = travelTimeInMinutes > 0 ? travelTimeInMinutes : 1;
+        if (!hasRouteClosure(bsOfK.STRECKE_NR, bsOfK.KM_I, indexes[0].KM_I)) {
+            const d = computeDistanceOfBs(bsOfK, indexes[0]) / 100;
+            const travelTimeInMinutes = parseInt((d / kmPerMin).toFixed(0), 10);
+            g[bsOfK.KUERZEL][indexes[0].KUERZEL] = travelTimeInMinutes > 0 ? travelTimeInMinutes : 1;
+            if (twoWay) {
+                if (!g[indexes[0].KUERZEL]) g[indexes[0].KUERZEL] = {}
+                g[indexes[0].KUERZEL][bsOfK.KUERZEL] = travelTimeInMinutes > 0 ? travelTimeInMinutes : 1;
+            }
         }
     }
     if (indexes[1]) {
-        const d = computeDistanceOfBs(bsOfK, indexes[1]) / 100;
-        const travelTimeInMinutes = parseInt((d / kmPerMin).toFixed(0), 10);
-        g[bsOfK.KUERZEL][indexes[1].KUERZEL] = travelTimeInMinutes > 0 ? travelTimeInMinutes : 1;
-        if (twoWay) {
-            if (!g[indexes[1].KUERZEL]) g[indexes[1].KUERZEL] = {}
-            g[indexes[1].KUERZEL][bsOfK.KUERZEL] = travelTimeInMinutes > 0 ? travelTimeInMinutes : 1;
+        if (!hasRouteClosure(bsOfK.STRECKE_NR, bsOfK.KM_I, indexes[1].KM_I)) {
+            const d = computeDistanceOfBs(bsOfK, indexes[1]) / 100;
+            const travelTimeInMinutes = parseInt((d / kmPerMin).toFixed(0), 10);
+            g[bsOfK.KUERZEL][indexes[1].KUERZEL] = travelTimeInMinutes > 0 ? travelTimeInMinutes : 1;
+            if (twoWay) {
+                if (!g[indexes[1].KUERZEL]) g[indexes[1].KUERZEL] = {}
+                g[indexes[1].KUERZEL][bsOfK.KUERZEL] = travelTimeInMinutes > 0 ? travelTimeInMinutes : 1;
+            }
         }
     }
 }

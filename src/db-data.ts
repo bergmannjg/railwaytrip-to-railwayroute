@@ -1,8 +1,7 @@
 const stops = require('../db-data/generated/stops.json') as Stop[];
-
-const railwayRoutes = require('../db-data/generated/strecken_pz.json') as RailwayRoute[] ;
-
-const betriebsstellenWithRailwayRoutePositions= require('../db-data/generated/betriebsstellen_streckennummer_pz.json') as BetriebsstelleRailwayRoutePosition[];
+const railwayRoutes = require('../db-data/generated/strecken_pz.json') as RailwayRoute[];
+const betriebsstellenWithRailwayRoutePositions = require('../db-data/generated/betriebsstellen_streckennummer_pz.json') as BetriebsstelleRailwayRoutePosition[];
+const streckensperrungen = require('../db-data/generated/streckensperrungen.json') as Streckensperrung[];
 
 // a stop is identified by EVA_NR (uic_ref) and is a Betriebsstelle
 interface Stop {
@@ -62,6 +61,12 @@ interface BetriebsstelleRailwayRoutePosition extends RailwayRoutePosition {
     "GK_R_DGN": number | string;
     "GK_H_DGN": number | string;
     maxSpeed?: number;
+}
+
+interface Streckensperrung {
+    "strecke_nr": number;
+    "von_km_i": number;
+    "bis_km_i": number;
 }
 
 interface StopWithRailwayRoutePositions {
@@ -156,6 +161,17 @@ function computeDistanceOfKmI(kmiFrom: number, kmiTo: number): number {
     else return mtTo - mtFrom;
 }
 
+function isBetween(km: number, kmiFrom: number, kmiTo: number): boolean {
+    if (kmiFrom < kmiTo) return kmiFrom < km && km < kmiTo;
+    else if (kmiFrom > kmiTo) return kmiTo < km && km < kmiFrom;
+    return false;
+}
+
+function hasRouteClosure(route: number, kmiFrom: number, kmiTo: number): boolean {
+    const sperrungen = streckensperrungen.filter(s => s.strecke_nr === route);
+    return sperrungen.find(sp => isBetween(sp.von_km_i, kmiFrom, kmiTo)) !== undefined;
+}
+
 /*
  * examples for ds100 in haltestellen 'EBIL', 'EBIL,EBILP', 'KDN,KDN P', 'EHE P'
  */
@@ -210,6 +226,6 @@ function findRailwayRoute(strecke: number): RailwayRoute | undefined {
     return railwayRoutes.find(s => s.STRNR === strecke);
 }
 
-export { computeDistanceOfKmI, getDs100ValuesForCrossingsOfBetriebsstellenWithRailwayRoutePositions, findBetriebsstellenWithRailwayRoutePositionsForDS100Pattern, findRailwayRoute, findCrossingsOfBetriebsstellenWithRailwayRoutePositionsForRailwayRouteNr, findBetriebsstellenWithRailwayRoutePositionsForRailwayRouteNr, findCrossingsOfBetriebsstellenWithRailwayRoutePositionsForDS100, findStreckennutzungGeschwindigkeitForRailwayRouteNr, findStopForUicRef }
+export { hasRouteClosure, computeDistanceOfKmI, getDs100ValuesForCrossingsOfBetriebsstellenWithRailwayRoutePositions, findBetriebsstellenWithRailwayRoutePositionsForDS100Pattern, findRailwayRoute, findCrossingsOfBetriebsstellenWithRailwayRoutePositionsForRailwayRouteNr, findBetriebsstellenWithRailwayRoutePositionsForRailwayRouteNr, findCrossingsOfBetriebsstellenWithRailwayRoutePositionsForDS100, findStreckennutzungGeschwindigkeitForRailwayRouteNr, findStopForUicRef }
 
-export type { RailwayRoutePosition, StopWithRailwayRoutePositions, Stop, BetriebsstelleRailwayRoutePosition, Betriebsstelle, RailwayRoute }
+export type { Streckensperrung, RailwayRoutePosition, StopWithRailwayRoutePositions, Stop, BetriebsstelleRailwayRoutePosition, Betriebsstelle, RailwayRoute }

@@ -107,6 +107,8 @@ cd ..
 
 ./scripts/extend-railway-route-endpoints.ts
 
+./scripts/find-route-closures.ts
+
 ./scripts/extract-pz-strecken.ts
 
 ./scripts/create-graph.ts
