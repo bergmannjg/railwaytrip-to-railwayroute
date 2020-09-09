@@ -46,8 +46,8 @@ The files can be restored with the script [restore.sh](../scripts/restore.sh).
 * file: graph.json
 * generrated by script [create-graph.ts](../scripts/create-graph.ts)
 
-### Railway routes cache
+### Preferred railway routes
 
-* contains precomputed matchings of two station trips and the corresponding railway route numbers
+* contains precomputed matchings of two station trips and the corresponding railway route numbers, overrides path from graph
 * file: RailwayRouteCache.json
-* generrated by script [create-cache.ts](../scripts/create-cache.ts)
+* generrated by script [create-preferred-routes.ts](../scripts/preferredroutes.ts)

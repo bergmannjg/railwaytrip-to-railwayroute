@@ -2,6 +2,7 @@ const stops = require('../db-data/generated/stops.json') as Stop[];
 const railwayRoutes = require('../db-data/generated/strecken_pz.json') as RailwayRoute[];
 const betriebsstellenWithRailwayRoutePositions = require('../db-data/generated/betriebsstellen_streckennummer_pz.json') as BetriebsstelleRailwayRoutePosition[];
 const streckensperrungen = require('../db-data/generated/streckensperrungen.json') as Streckensperrung[];
+const betriebsstellen = require('../db-data/original/DBNetz-Betriebsstellenverzeichnis-Stand2018-04.json') as Betriebsstelle[];
 
 // a stop is identified by EVA_NR (uic_ref) and is a Betriebsstelle
 interface Stop {
@@ -15,7 +16,6 @@ interface Stop {
     "Betreiber_Name": string;
     "Betreiber_Nr": number | string;
     "Status": string;
-    streckenpositionen?: Array<BetriebsstelleRailwayRoutePosition>
 }
 
 // a Betriebsstelle is identified by Abk (DS100)
@@ -33,6 +33,7 @@ interface Betriebsstelle {
     "Netz-Key": string;
     "Fpl-rel": string;
     "Fpl-Gr": string;
+    streckenpositionen?: Array<BetriebsstelleRailwayRoutePosition>
 }
 
 interface RailwayRoute {
@@ -71,7 +72,6 @@ interface Streckensperrung {
 
 interface StopWithRailwayRoutePositions {
     ds100_ref: string; // DS100 pattern
-    uic_ref: number;
     name: string;
     streckenpositionen: Array<BetriebsstelleRailwayRoutePosition>;
 }
@@ -186,6 +186,11 @@ function matchWithDS100(s: string, ds100: string, splitDs100: string[]) {
     return false;
 }
 
+function findBetriebsstelleForDS100Pattern(ds100Pattern: string) {
+    const splitDs100 = ds100Pattern.indexOf(',') > 0 ? ds100Pattern.split(',') : [];
+    return betriebsstellen.find(b => matchWithDS100(b.Abk, ds100Pattern, splitDs100));
+}
+
 function findBetriebsstellenWithRailwayRoutePositionsForDS100Pattern(ds100Pattern: string): BetriebsstelleRailwayRoutePosition[] {
     const splitDs100 = ds100Pattern.indexOf(',') > 0 ? ds100Pattern.split(',') : [];
     return betriebsstellenWithRailwayRoutePositions.filter(b => matchWithDS100(b.KUERZEL, ds100Pattern, splitDs100));
@@ -226,6 +231,6 @@ function findRailwayRoute(strecke: number): RailwayRoute | undefined {
     return railwayRoutes.find(s => s.STRNR === strecke);
 }
 
-export { hasRouteClosure, computeDistanceOfKmI, getDs100ValuesForCrossingsOfBetriebsstellenWithRailwayRoutePositions, findBetriebsstellenWithRailwayRoutePositionsForDS100Pattern, findRailwayRoute, findCrossingsOfBetriebsstellenWithRailwayRoutePositionsForRailwayRouteNr, findBetriebsstellenWithRailwayRoutePositionsForRailwayRouteNr, findCrossingsOfBetriebsstellenWithRailwayRoutePositionsForDS100, findStreckennutzungGeschwindigkeitForRailwayRouteNr, findStopForUicRef }
+export { hasRouteClosure, computeDistanceOfKmI, getDs100ValuesForCrossingsOfBetriebsstellenWithRailwayRoutePositions, findBetriebsstelleForDS100Pattern, findBetriebsstellenWithRailwayRoutePositionsForDS100Pattern, findRailwayRoute, findCrossingsOfBetriebsstellenWithRailwayRoutePositionsForRailwayRouteNr, findBetriebsstellenWithRailwayRoutePositionsForRailwayRouteNr, findCrossingsOfBetriebsstellenWithRailwayRoutePositionsForDS100, findStreckennutzungGeschwindigkeitForRailwayRouteNr, findStopForUicRef }
 
 export type { Streckensperrung, RailwayRoutePosition, StopWithRailwayRoutePositions, Stop, BetriebsstelleRailwayRoutePosition, Betriebsstelle, RailwayRoute }

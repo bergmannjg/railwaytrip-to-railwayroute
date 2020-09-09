@@ -143,8 +143,21 @@ function checkBahnstellenart(typ: string) {
 
 const replaceWhitespace = (str: string) => str.replace(/\s+/g, '').trim();
 
+const cache: { [index: string]: string } = {}
+
+const replaceCachedWhitespace = (str: string) => {
+    const cached = cache[str]
+    if (cached) {
+        return cached;
+    } else {
+        const c = replaceWhitespace(str);
+        cache[str] = c;
+        return c;
+    }
+}
+
 const testEqual = (s1: string, s2: string) => {
-    return replaceWhitespace(s1) === replaceWhitespace(s2);
+    return replaceCachedWhitespace(s1) === replaceCachedWhitespace(s2);
 }
 
 function findBetriebsstelleForName(name: string) {

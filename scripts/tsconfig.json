@@ -26,8 +26,5 @@
                 "../types/functional-red-black-tree"
             ]
         }
-    },
-    "include": [
-        "create-cache.ts"
-    ]
+    }
 }

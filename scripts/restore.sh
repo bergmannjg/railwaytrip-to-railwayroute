@@ -113,5 +113,5 @@ cd ..
 
 ./scripts/create-graph.ts
 
-./scripts/create-cache.ts
+./scripts/create-preferred-routes.ts
 
