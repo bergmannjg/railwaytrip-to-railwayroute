@@ -3,12 +3,24 @@ import type { RailwayRoutePosition, StopWithRailwayRoutePositions as Betriebsste
 import { addStopToGraph } from './db-data-graph'
 import { Dijkstra } from './dijkstra'
 import type { Graph } from './dijkstra'
+import { SpawnSyncOptionsWithStringEncoding } from 'child_process'
 
 const preferredRoutes = require('../db-data/generated/preferredroutes.json') as PreferredRoute[];
 const graph = require('../db-data/generated/graph.json') as Graph;
 
 const dijkstra = new Dijkstra();
-const verbose = false;
+
+let verbose = false;
+function setVerbose(_verbose: boolean) {
+    verbose = _verbose;
+}
+
+let enablePreferredRoutes = true;
+let enableIntersections = false;
+function setStrategy(_enablePreferredRoutes: boolean, _enableIntersections: boolean) {
+    enablePreferredRoutes = _enablePreferredRoutes;
+    enableIntersections = _enableIntersections;
+}
 
 interface BetriebsstelleWithRailwayRoutePosition {
     ds100_ref: string;
@@ -154,6 +166,31 @@ function findRailwayRoutesFromPreferredRoutes(state: State, hs_pos_von: Betriebs
     return state;
 }
 
+function getCostOfPath(graph: Graph, path: string[]) {
+    let cost = 0;
+    for (let n = 0; n < path.length - 1; n++) {
+        cost = cost + graph[path[n]][path[n + 1]]
+    }
+    return cost;
+}
+
+interface Ds100BetriebsstelleRailwayRoutePositions {
+    ds100: string;
+    positions: BetriebsstelleRailwayRoutePosition[];
+}
+
+interface Ds100FromToBetriebsstelleRailwayRoutePositions {
+    ds100From: string;
+    ds100To?: Ds100BetriebsstelleRailwayRoutePositions;
+    intersections: BetriebsstelleRailwayRoutePosition[];
+}
+
+interface Ds100FromToRoute {
+    ds100From: string;
+    ds100To: string;
+    route: number;
+}
+
 function findRailwayRoutesFromPath(state: State, hs_pos_von: BetriebsstelleWithRailwayRoutePositions, hs_pos_bis: BetriebsstelleWithRailwayRoutePositions): State {
     hs_pos_von.ds100_ref = getFirstPartOfDS100(hs_pos_von.ds100_ref)
     hs_pos_bis.ds100_ref = getFirstPartOfDS100(hs_pos_bis.ds100_ref)
@@ -161,61 +198,65 @@ function findRailwayRoutesFromPath(state: State, hs_pos_von: BetriebsstelleWithR
     addStopToGraph(graph, hs_pos_bis);
 
     const path = dijkstra.find_path(graph, hs_pos_von.ds100_ref, hs_pos_bis.ds100_ref);
-    if (verbose) console.log('hs_pos_von', hs_pos_von.ds100_ref, ', hs_pos_bis', hs_pos_bis.ds100_ref, ', path', path)
-    if (path.length === 2) {
+    if (verbose) console.log('path', path, ', cost:', getCostOfPath(graph, path))
+    if (path.length > 1) {
         state.success = true;
 
-        const intersection = hs_pos_von.streckenpositionen.find(a => hs_pos_bis.streckenpositionen.find(b => a.STRECKE_NR === b.STRECKE_NR));
-        if (intersection) {
-            const lastRailwayRoute = state.railwayRoutes.length > 0 ? state.railwayRoutes[state.railwayRoutes.length - 1] : undefined;
-            if (lastRailwayRoute && lastRailwayRoute.railwayRouteNr === intersection.STRECKE_NR) {
-                lastRailwayRoute.to = buildStopWithRailwayRoutePosition(intersection.STRECKE_NR, hs_pos_bis)
-            } else {
-                state.actualRailwayRoute = {
-                    railwayRouteNr: intersection.STRECKE_NR,
-                    from: buildStopWithRailwayRoutePosition(intersection.STRECKE_NR, hs_pos_von),
-                    to: buildStopWithRailwayRoutePosition(intersection.STRECKE_NR, hs_pos_bis)
-                }
-                state.railwayRoutes.push(state.actualRailwayRoute);
-            }
-            state.actualRailwayRoute = undefined;
-        }
-    } else if (path.length > 2) {
-        state.success = true;
-
-        const arrBs: BetriebsstelleRailwayRoutePosition[] = [];
-        let prevPositions = hs_pos_von.streckenpositionen;
-        path.forEach(p => {
-            if (p !== hs_pos_von.ds100_ref) {
-                let positions = p === hs_pos_bis.ds100_ref
-                    ? hs_pos_bis.streckenpositionen
-                    : findCrossingsOfBetriebsstellenWithRailwayRoutePositionsForDS100(p);
-
-                // minimize number of railway routes
-                const intersections = prevPositions.filter(a => positions && positions.find(b => a.STRECKE_NR === b.STRECKE_NR));
-                let shouldPush = intersections.length > 0;
-                if (intersections.length > 1 && arrBs.length > 0) {
-                    const lastStrecke = arrBs[arrBs.length - 1].STRECKE_NR;
-                    shouldPush = !intersections.find(a => a.STRECKE_NR === lastStrecke);
-                }
-                if (shouldPush) {
-                    const intersection = intersections[0];
-                    if (arrBs.length === 0 || arrBs[arrBs.length - 1].STRECKE_NR !== intersection.STRECKE_NR) arrBs.push(intersection);
-                }
-                prevPositions = positions;
+        const positions: Ds100BetriebsstelleRailwayRoutePositions[] = path.map(p => {
+            return {
+                ds100: p,
+                positions: p === hs_pos_von.ds100_ref
+                    ? hs_pos_von.streckenpositionen :
+                    p === hs_pos_bis.ds100_ref
+                        ? hs_pos_bis.streckenpositionen : findCrossingsOfBetriebsstellenWithRailwayRoutePositionsForDS100(p)
             }
         })
-        const intersection = hs_pos_bis.streckenpositionen.find(a => prevPositions.find(b => a.STRECKE_NR === b.STRECKE_NR));
-        if (intersection) {
-            arrBs.push(intersection);
+
+        let candidate: Ds100FromToBetriebsstelleRailwayRoutePositions | undefined;
+        const ds100FromToRoutes: Ds100FromToRoute[] = []
+        positions.forEach(p => {
+            if (candidate) {
+                const intersections = candidate.intersections.filter(a => p.positions.find(b => a.STRECKE_NR === b.STRECKE_NR))
+                if (intersections.length > 0) {
+                    candidate.ds100To = p;
+                    candidate.intersections = intersections;
+                } else if (candidate.ds100To) {
+                    ds100FromToRoutes.push({
+                        ds100From: candidate.ds100From,
+                        ds100To: candidate.ds100To.ds100,
+                        route: candidate.intersections[0].STRECKE_NR
+                    })
+                    candidate = {
+                        ds100From: candidate.ds100To.ds100,
+                        ds100To: p,
+                        intersections: candidate.ds100To.positions.filter(a => p.positions.find(b => a.STRECKE_NR === b.STRECKE_NR))
+                    };
+                }
+            } else {
+                candidate = {
+                    ds100From: p.ds100,
+                    intersections: p.positions
+                }
+            }
+        })
+        if (candidate && candidate.ds100To) {
+            ds100FromToRoutes.push({
+                ds100From: candidate.ds100From,
+                ds100To: candidate.ds100To.ds100,
+                route: candidate.intersections[0].STRECKE_NR
+            })
         }
 
-        for (let n = 0; n < arrBs.length - 1; n++) {
-            const bsPosOfA = arrBs[n];
-            const bsPosOfB = arrBs[n + 1];
-            const bsPosOfBWithRouteOfA = findBetriebsstellenWithRailwayRoutePositionsForDS100Pattern(bsPosOfB.KUERZEL).find(bs => bs.STRECKE_NR === bsPosOfA.STRECKE_NR);
-            addToState(state, bsPosOfA.STRECKE_NR, { ds100_ref: bsPosOfA.KUERZEL, name: bsPosOfA.BEZEICHNUNG, railwayRoutePosition: bsPosOfA }, { ds100_ref: bsPosOfB.KUERZEL, name: bsPosOfB.BEZEICHNUNG, railwayRoutePosition: bsPosOfBWithRouteOfA }, 'path')
+        for (let n = 0; n < ds100FromToRoutes.length; n++) {
+            const curr = ds100FromToRoutes[n];
+            const bsPosOfA = findBetriebsstellenWithRailwayRoutePositionsForDS100Pattern(curr.ds100From).find(bs => bs.STRECKE_NR === curr.route);;
+            const bsPosOfB = findBetriebsstellenWithRailwayRoutePositionsForDS100Pattern(curr.ds100To).find(bs => bs.STRECKE_NR === curr.route);
+            if (bsPosOfA && bsPosOfB)
+                addToState(state, curr.route,
+                    { ds100_ref: bsPosOfA.KUERZEL, name: bsPosOfA.BEZEICHNUNG, railwayRoutePosition: bsPosOfA },
+                    { ds100_ref: bsPosOfB.KUERZEL, name: bsPosOfB.BEZEICHNUNG, railwayRoutePosition: bsPosOfB }, 'path')
         }
+
     }
 
     return state;
@@ -251,7 +292,7 @@ function addToState(state: State, railwayRouteNr: number, from: BetriebsstelleWi
                 state.actualRailwayRoute.to = from;
             }
             if (state.railwayRoutes.length === 0 || state.railwayRoutes[state.railwayRoutes.length - 1].railwayRouteNr !== state.actualRailwayRoute.railwayRouteNr) {
-                if (verbose) console.log(rule, ' push to state.railwayRoutes', state.actualRailwayRoute.railwayRouteNr)
+                if (verbose) console.log(rule, ' push to state.railwayRoutes', state.actualRailwayRoute.railwayRouteNr, state.actualRailwayRoute.from?.ds100_ref, state.actualRailwayRoute.to?.ds100_ref)
                 state.railwayRoutes.push(state.actualRailwayRoute);
             }
             state.actualRailwayRoute = {
@@ -294,6 +335,9 @@ function findRailwayRoutesForDs100Patterns(ds100Patterns: string[]): RailwayRout
     for (let n = 0; n < hs_pos_list.length - 1; n++) {
         let hs_pos_from = hs_pos_list[n];
         const hs_pos_to = hs_pos_list[n + 1];
+        
+        if (verbose) console.log('findRailwayRoute, hs_pos_from', hs_pos_from.ds100_ref, ', hs_pos_to', hs_pos_to.ds100_ref)
+
         if (n > 0 && isSubStop(hs_pos_from, hs_pos_list[n - 1])) {
             hs_pos_from = hs_pos_list[n - 1];
         }
@@ -301,10 +345,10 @@ function findRailwayRoutesForDs100Patterns(ds100Patterns: string[]): RailwayRout
             continue;
         }
         state.success = false;
-        if (!state.success) {
+        if (!state.success && enablePreferredRoutes) {
             state = findRailwayRoutesFromPreferredRoutes(state, hs_pos_from, hs_pos_to);
         }
-        if (!state.success) {
+        if (!state.success && enableIntersections) {
             state = findRailwayRoutesFromIntersections(state, hs_pos_from, hs_pos_to);
         }
         if (!state.success) {
@@ -318,15 +362,17 @@ function findRailwayRoutesForDs100Patterns(ds100Patterns: string[]): RailwayRout
     if (state.actualRailwayRoute !== undefined) {
         if (state.railwayRoutes.length > 0) {
             if (state.railwayRoutes[state.railwayRoutes.length - 1].railwayRouteNr !== state.actualRailwayRoute.railwayRouteNr) {
+                if (verbose) console.log('path', ' push to state.railwayRoutes', state.actualRailwayRoute.railwayRouteNr);
                 state.railwayRoutes.push(state.actualRailwayRoute);
             }
         } else {
+            if (verbose) console.log('path', ' push to state.railwayRoutes', state.actualRailwayRoute.railwayRouteNr);
             state.railwayRoutes.push(state.actualRailwayRoute);
         }
     }
     return { railwayRoutes: state.railwayRoutes, missing };
 }
 
-export { verbose, findRailwayRoutesOfTrip, findRailwayRouteText, findRailwayRoute, computeDistanceOfRoutes, findBetriebsstellenWithRailwayRoutePositionForRailwayRouteNr, findRailwayRoutePositionForRailwayRoutes }
+export { setVerbose, setStrategy, findRailwayRoutesOfTrip, findRailwayRouteText, findRailwayRoute, computeDistanceOfRoutes, findBetriebsstellenWithRailwayRoutePositionForRailwayRouteNr, findRailwayRoutePositionForRailwayRoutes }
 
 export type { RailwayRouteOfTrip, PreferredRoute }

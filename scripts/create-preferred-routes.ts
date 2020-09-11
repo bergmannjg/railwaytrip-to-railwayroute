@@ -25,9 +25,10 @@ function findRailwayRouteOfTrip(route: number, fromDs100Pattern: string, toDs100
     }
 }
 
-const cache: PreferredRoute[] = [];
+const preferredroutes: PreferredRoute[] = [];
 
-const pf: PreferredRoute = {
+// see https://de.wikipedia.org/wiki/Bahnstrecke_Elberfeld%E2%80%93Dortmund
+preferredroutes.push({
     ds100From: "EHG",
     ds100To: "EDO,EDO N",
     railwayRoutes: [
@@ -35,10 +36,17 @@ const pf: PreferredRoute = {
         findRailwayRouteOfTrip(2140, "EWIT", "ESTR"),
         findRailwayRouteOfTrip(2125, "ESTR", "EDO,EDO N")
     ]
-}
-cache.push(pf);
+});
+preferredroutes.push({
+    ds100From: "EWIT",
+    ds100To: "EDO,EDO N",
+    railwayRoutes: [
+        findRailwayRouteOfTrip(2140, "EWIT", "ESTR"),
+        findRailwayRouteOfTrip(2125, "ESTR", "EDO,EDO N")
+    ]
+});
 
-fs.writeFile("./db-data/generated/preferredroutes.json", JSON.stringify(cache), function (err: any) {
+fs.writeFile("./db-data/generated/preferredroutes.json", JSON.stringify(preferredroutes), function (err: any) {
     if (err) {
         console.log(err);
     }

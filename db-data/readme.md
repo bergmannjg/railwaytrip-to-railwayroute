@@ -49,5 +49,5 @@ The files can be restored with the script [restore.sh](../scripts/restore.sh).
 ### Preferred railway routes
 
 * contains precomputed matchings of two station trips and the corresponding railway route numbers, overrides path from graph
-* file: RailwayRouteCache.json
-* generrated by script [create-preferred-routes.ts](../scripts/preferredroutes.ts)
+* file: preferredroutes.json
+* generrated by script [create-preferred-routes.ts](../scripts/create-preferred-routes.ts)
