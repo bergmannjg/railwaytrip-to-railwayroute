@@ -41,6 +41,7 @@ function addToGraph(g: Graph, bsOfK: BetriebsstelleRailwayRoutePosition, positio
         if (!hasRouteClosure(bsOfK.STRECKE_NR, bsOfK.KM_I, indexes[0].KM_I)) {
             const d = computeDistanceOfBs(bsOfK, indexes[0]) / 100;
             const travelTimeInMinutes = parseInt((d / kmPerMin).toFixed(0), 10);
+            if (!g[bsOfK.KUERZEL]) g[bsOfK.KUERZEL] = {}
             g[bsOfK.KUERZEL][indexes[0].KUERZEL] = travelTimeInMinutes > 0 ? travelTimeInMinutes : 1;
             if (twoWay) {
                 if (!g[indexes[0].KUERZEL]) g[indexes[0].KUERZEL] = {}
@@ -52,6 +53,7 @@ function addToGraph(g: Graph, bsOfK: BetriebsstelleRailwayRoutePosition, positio
         if (!hasRouteClosure(bsOfK.STRECKE_NR, bsOfK.KM_I, indexes[1].KM_I)) {
             const d = computeDistanceOfBs(bsOfK, indexes[1]) / 100;
             const travelTimeInMinutes = parseInt((d / kmPerMin).toFixed(0), 10);
+            if (!g[bsOfK.KUERZEL]) g[bsOfK.KUERZEL] = {}
             g[bsOfK.KUERZEL][indexes[1].KUERZEL] = travelTimeInMinutes > 0 ? travelTimeInMinutes : 1;
             if (twoWay) {
                 if (!g[indexes[1].KUERZEL]) g[indexes[1].KUERZEL] = {}
@@ -96,6 +98,7 @@ function addStopToGraph(g: Graph, bs: StopWithRailwayRoutePositions): void {
 
     const positions = findCrossingsOfBetriebsstellenWithRailwayRoutePositionsForRailwayRouteNr(bs.streckenpositionen[0].STRECKE_NR);
     if (positions) {
+        console.log('add to graph',bs.ds100_ref); 
         g[bs.ds100_ref] = {};
         addToGraph(g, bs.streckenpositionen[0], positions, true);
     } else {

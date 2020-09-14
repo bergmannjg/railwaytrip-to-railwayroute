@@ -3,11 +3,12 @@
 // extract pz (Personenzug) strecken from file strecken.json
 // requires ts-node (https://github.com/TypeStrong/ts-node)
 
-import type { RailwayRoute, BetriebsstelleRailwayRoutePosition } from '../dist/db-data'
+import type { RailwayRoute, BetriebsstelleRailwayRoutePosition, RailwayRouteDS100Endpoint } from '../dist/db-data'
 const fs = require('fs');
 const strecken = require('../db-data/original/strecken.json') as Array<RailwayRoute>;
 const betriebsstellen_streckennummer = require('../db-data/generated/betriebsstellen_streckennummer.json') as Array<BetriebsstelleRailwayRoutePosition>;
 const streckennutzung = require('../db-data/original/strecken_nutzung.json') as Array<Streckenutzung>;
+const routeEndpoints = require('../db-data/generated/route-endpoints.json') as RailwayRouteDS100Endpoint[];
 
 interface Streckenutzung {
     "mifcode": string;
@@ -31,6 +32,14 @@ interface Streckenutzung {
 const strecken_pz = strecken.filter(s => streckennutzung.find(sn => sn.strecke_nr === s.STRNR && sn.bahnnutzung.startsWith('Pz')))
 
 fs.writeFile("./db-data/generated/strecken_pz.json", JSON.stringify(strecken_pz), function (err: any) {
+    if (err) {
+        console.log(err);
+    }
+});
+
+const routeEndpoints_pz = routeEndpoints.filter(s => streckennutzung.find(sn => sn.strecke_nr === s.strecke.STRNR && sn.bahnnutzung.startsWith('Pz')))
+
+fs.writeFile("./db-data/generated/route-endpoints-pz.json", JSON.stringify(routeEndpoints_pz), function (err: any) {
     if (err) {
         console.log(err);
     }

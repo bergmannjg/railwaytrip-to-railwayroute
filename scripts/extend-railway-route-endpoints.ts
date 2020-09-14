@@ -3,7 +3,7 @@
 // extends file betriebsstellen_open_data.json with missing information of railway route endpoints
 // requires ts-node (https://github.com/TypeStrong/ts-node)
 
-import type { BetriebsstelleRailwayRoutePosition, RailwayRoute, Stop, Betriebsstelle } from '../dist/db-data'
+import type { BetriebsstelleRailwayRoutePosition, RailwayRoute, Stop, Betriebsstelle, RailwayRouteDS100Endpoint } from '../dist/db-data'
 const fs = require('fs');
 const betriebsstelleRailwayRoutePositionOrig = require('../db-data/original/betriebsstellen_open_data.json') as Array<BetriebsstelleRailwayRoutePositionOrig>;
 const stops = require('../db-data/original/D_Bahnhof_2020_alle.json') as Array<Stop>
@@ -42,12 +42,6 @@ interface BetriebsstelleRailwayRoutePositionOrig {
     "GK_H_DGN": number | string;
     "GEOGR_BREITE": number | string;
     "GEOGR_LAENGE": number;
-}
-
-interface RailwayRouteDS100Endpoint {
-    strecke: RailwayRoute;
-    from?: Betriebsstelle;
-    to?: Betriebsstelle;
 }
 
 /** 
@@ -265,6 +259,13 @@ const rrEndpoints = findRailwayRouteDS100Endpoint();
 console.log('rrEndpoints.length: ', rrEndpoints.length);
 const rrUndef = rrEndpoints.filter(r => r.from === undefined || r.to === undefined);
 console.log('incomplete rrEndpoints.length: ', rrUndef.length);
+const rrDefined = rrEndpoints.filter(r => r.from !== undefined && r.to !== undefined);
+fs.writeFile("./db-data/generated/route-endpoints.json", JSON.stringify(rrDefined), function (err: any) {
+    if (err) {
+        console.log(err);
+    }
+});
+
 const missingMissingTripPositions = createMissingTripPositions(betriebsstelleRailwayRoutePosition, rrEndpoints);
 console.log('missing.length: ', missingMissingTripPositions.length);
 const betriebsstelleRailwayRoutePositionNeu = betriebsstelleRailwayRoutePositionOrig.concat(missingMissingTripPositions, missing);

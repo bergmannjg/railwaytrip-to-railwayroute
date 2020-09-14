@@ -5,6 +5,17 @@ beforeAll(() => {
     setStrategy(true, false);
 });
 
+test('test Norddeich Rheine', () => {
+    const stops = [8007768, 8001768, 8000316];
+    const result = findRailwayRoutesOfTrip(stops);
+    const railwayRoutes = result.railwayRoutes;
+    expect(result.missing).toBe(0);
+    expect(railwayRoutes.length).toBe(3);
+    expect(railwayRoutes[0].railwayRouteNr).toBe(1574);
+    expect(railwayRoutes[1].railwayRouteNr).toBe(1570);
+    expect(railwayRoutes[2].railwayRouteNr).toBe(2931);
+});
+
 test('test Hagen Dortmund', () => {
     const stops = [8000142, 8000080];
     const railwayRoutes = findRailwayRoutesOfTrip(stops).railwayRoutes;
@@ -25,7 +36,9 @@ test('test Hagen Witten Dortmund', () => {
 
 test('test Norden Jever', () => {
     const stops = [8000800, 8003124]; // route has closure
-    const railwayRoutes = findRailwayRoutesOfTrip(stops).railwayRoutes;
+    const result = findRailwayRoutesOfTrip(stops);
+    const railwayRoutes = result.railwayRoutes;
+    expect(result.missing).toBe(0);
     expect(railwayRoutes.length).toBe(5);
     expect(railwayRoutes[0].railwayRouteNr).toBe(1570);
     expect(railwayRoutes[1].railwayRouteNr).toBe(2931);
@@ -69,7 +82,9 @@ test('test Ulm Augsburg', () => {
 
 test('test ICE 73 Hamburg Freiburg', () => {
     const stops = [8002549, 8000152, 8000128, 8003200, 8000105, 8000244, 8000191, 8000191, 8000774, 8000290, 8000107];
-    const railwayRoutes = findRailwayRoutesOfTrip(stops).railwayRoutes;
+    const result = findRailwayRoutesOfTrip(stops);
+    const railwayRoutes = result.railwayRoutes;
+    expect(result.missing).toBe(0);
     expect(railwayRoutes.length.toString()).toMatch(/8|11/);
     if (railwayRoutes.length === 11) {
         expect(railwayRoutes[0].railwayRouteNr).toBe(2200);

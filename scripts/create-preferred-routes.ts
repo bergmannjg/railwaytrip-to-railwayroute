@@ -30,19 +30,19 @@ const preferredroutes: PreferredRoute[] = [];
 // see https://de.wikipedia.org/wiki/Bahnstrecke_Elberfeld%E2%80%93Dortmund
 preferredroutes.push({
     ds100From: "EHG",
-    ds100To: "EDO,EDO N",
+    ds100To: "EDO",
     railwayRoutes: [
         findRailwayRouteOfTrip(2801, "EHG", "EWIT"),
         findRailwayRouteOfTrip(2140, "EWIT", "ESTR"),
-        findRailwayRouteOfTrip(2125, "ESTR", "EDO,EDO N")
+        findRailwayRouteOfTrip(2125, "ESTR", "EDO")
     ]
 });
 preferredroutes.push({
     ds100From: "EWIT",
-    ds100To: "EDO,EDO N",
+    ds100To: "EDO",
     railwayRoutes: [
         findRailwayRouteOfTrip(2140, "EWIT", "ESTR"),
-        findRailwayRouteOfTrip(2125, "ESTR", "EDO,EDO N")
+        findRailwayRouteOfTrip(2125, "ESTR", "EDO")
     ]
 });
 

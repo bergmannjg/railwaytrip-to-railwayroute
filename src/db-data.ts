@@ -3,6 +3,7 @@ const railwayRoutes = require('../db-data/generated/strecken_pz.json') as Railwa
 const betriebsstellenWithRailwayRoutePositions = require('../db-data/generated/betriebsstellen_streckennummer_pz.json') as BetriebsstelleRailwayRoutePosition[];
 const streckensperrungen = require('../db-data/generated/streckensperrungen.json') as Streckensperrung[];
 const betriebsstellen = require('../db-data/original/DBNetz-Betriebsstellenverzeichnis-Stand2018-04.json') as Betriebsstelle[];
+const routeEndpoints = require('../db-data/generated/route-endpoints-pz.json') as RailwayRouteDS100Endpoint[];
 
 // a stop is identified by EVA_NR (uic_ref) and is a Betriebsstelle
 interface Stop {
@@ -76,6 +77,12 @@ interface StopWithRailwayRoutePositions {
     streckenpositionen: Array<BetriebsstelleRailwayRoutePosition>;
 }
 
+interface RailwayRouteDS100Endpoint {
+    strecke: RailwayRoute;
+    from?: Betriebsstelle;
+    to?: Betriebsstelle;
+}
+
 const ds100WithCrossingsOfBetriebsstellenWithRailwayRoutePositions: { [index: string]: Array<BetriebsstelleRailwayRoutePosition> } = createIdxDs100WithCrossingsOfBetriebsstellenWithRailwayRoutePositions();
 
 function createIdxDs100WithCrossingsOfBetriebsstellenWithRailwayRoutePositions() {
@@ -89,12 +96,16 @@ function createIdxDs100WithCrossingsOfBetriebsstellenWithRailwayRoutePositions()
 
     // remove Ds100 items without crossings
     Object.keys(obj).forEach(k => {
-        if (obj[k].length < 2) {
+        if (obj[k].length === 0 || (obj[k].length === 1 && !isEndpoint(obj[k][0].KUERZEL))) {
             delete obj[k];
         }
     })
 
     return obj;
+}
+
+function isEndpoint(ds100: string) {
+    return routeEndpoints.find(ep => (ep.from?.Abk === ds100 || ep.to?.Abk === ds100)) !== undefined
 }
 
 function insertOrdered(arr: Array<BetriebsstelleRailwayRoutePosition>, somevalue: BetriebsstelleRailwayRoutePosition) {
@@ -188,7 +199,12 @@ function matchWithDS100(s: string, ds100: string, splitDs100: string[]) {
 
 function findBetriebsstelleForDS100Pattern(ds100Pattern: string) {
     const splitDs100 = ds100Pattern.indexOf(',') > 0 ? ds100Pattern.split(',') : [];
-    return betriebsstellen.find(b => matchWithDS100(b.Abk, ds100Pattern, splitDs100));
+    const arrBs = betriebsstellen.filter(b => matchWithDS100(b.Abk, ds100Pattern, splitDs100));
+    if (arrBs.length === 0) return undefined;
+    else if (arrBs.length === 1) return arrBs[0];
+    else {
+        return arrBs.sort((a, b) => a.Abk.length - b.Abk.length)[0]; // return bs with shortest ds100 (Abk)
+    }
 }
 
 function findBetriebsstellenWithRailwayRoutePositionsForDS100Pattern(ds100Pattern: string): BetriebsstelleRailwayRoutePosition[] {
@@ -233,4 +249,4 @@ function findRailwayRoute(strecke: number): RailwayRoute | undefined {
 
 export { hasRouteClosure, computeDistanceOfKmI, getDs100ValuesForCrossingsOfBetriebsstellenWithRailwayRoutePositions, findBetriebsstelleForDS100Pattern, findBetriebsstellenWithRailwayRoutePositionsForDS100Pattern, findRailwayRoute, findCrossingsOfBetriebsstellenWithRailwayRoutePositionsForRailwayRouteNr, findBetriebsstellenWithRailwayRoutePositionsForRailwayRouteNr, findCrossingsOfBetriebsstellenWithRailwayRoutePositionsForDS100, findStreckennutzungGeschwindigkeitForRailwayRouteNr, findStopForUicRef }
 
-export type { Streckensperrung, RailwayRoutePosition, StopWithRailwayRoutePositions, Stop, BetriebsstelleRailwayRoutePosition, Betriebsstelle, RailwayRoute }
+export type { RailwayRouteDS100Endpoint, Streckensperrung, RailwayRoutePosition, StopWithRailwayRoutePositions, Stop, BetriebsstelleRailwayRoutePosition, Betriebsstelle, RailwayRoute }

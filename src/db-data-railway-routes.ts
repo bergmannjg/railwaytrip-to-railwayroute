@@ -88,15 +88,16 @@ function finddBetriebsstellenWithRailwayRoutePositions(ds100patterns: string[]) 
         if (bs) {
             const streckenpositionen =
                 bs.streckenpositionen ??
-                findBetriebsstellenWithRailwayRoutePositionsForDS100Pattern(ds100pattern);
+                findBetriebsstellenWithRailwayRoutePositionsForDS100Pattern(ds100pattern)
+                    .map(b => { b.KUERZEL = bs.Abk; return b }); // normalize pattern
             if (verbose) console.log('Ds100:', ds100pattern, ', name:', bs.Name, ', streckenpositionen:', streckenpositionen.length, ', from cache:', bs.streckenpositionen !== undefined)
             if (!bs.streckenpositionen) {
                 bs.streckenpositionen = streckenpositionen;
             }
             if (streckenpositionen.length > 0) {
-                accu.push({ ds100_ref: ds100pattern, name: bs.Name, streckenpositionen });
+                accu.push({ ds100_ref: bs.Abk, name: bs.Name, streckenpositionen });
             } else {
-                accu.push({ ds100_ref: ds100pattern, name: bs.Name, streckenpositionen });
+                accu.push({ ds100_ref: bs.Abk, name: bs.Name, streckenpositionen });
             }
         }
         return accu;
@@ -335,7 +336,7 @@ function findRailwayRoutesForDs100Patterns(ds100Patterns: string[]): RailwayRout
     for (let n = 0; n < hs_pos_list.length - 1; n++) {
         let hs_pos_from = hs_pos_list[n];
         const hs_pos_to = hs_pos_list[n + 1];
-        
+
         if (verbose) console.log('findRailwayRoute, hs_pos_from', hs_pos_from.ds100_ref, ', hs_pos_to', hs_pos_to.ds100_ref)
 
         if (n > 0 && isSubStop(hs_pos_from, hs_pos_list[n - 1])) {
