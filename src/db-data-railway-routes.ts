@@ -3,6 +3,7 @@ import type { RailwayRoutePosition, StopWithRailwayRoutePositions as Betriebsste
 import { addStopToGraph } from './db-data-graph'
 import { Dijkstra } from './dijkstra'
 import type { Graph } from './dijkstra'
+import type { RailwayRouteOfTripResult, RailwayRouteOfTrip, BetriebsstelleWithRailwayRoutePosition } from './db-data-railway-routes-types'
 
 const preferredRoutes = require('../db-data/generated/preferredroutes.json') as PreferredRoute[];
 const graph = require('../db-data/generated/graph.json') as Graph;
@@ -17,23 +18,6 @@ function setVerbose(_verbose: boolean) {
 let enablePreferredRoutes = true;
 function setStrategy(_enablePreferredRoutes: boolean) {
     enablePreferredRoutes = _enablePreferredRoutes;
-}
-
-interface BetriebsstelleWithRailwayRoutePosition {
-    ds100_ref: string;
-    name: string;
-    railwayRoutePosition?: BetriebsstelleRailwayRoutePosition;
-}
-
-interface RailwayRouteOfTrip {
-    railwayRouteNr?: number;
-    from?: BetriebsstelleWithRailwayRoutePosition;
-    to?: BetriebsstelleWithRailwayRoutePosition;
-}
-
-interface RailwayRouteOfTripResult {
-    railwayRoutes: RailwayRouteOfTrip[];
-    missing: number;
 }
 
 interface PreferredRoute {
