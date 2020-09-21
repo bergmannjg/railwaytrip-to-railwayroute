@@ -1,6 +1,6 @@
 import type { Graph } from './dijkstra'
 
-import { hasRouteClosure, computeDistanceOfKmI, getDs100ValuesForCrossingsOfBetriebsstellenWithRailwayRoutePositions, findCrossingsOfBetriebsstellenWithRailwayRoutePositionsForRailwayRouteNr, findCrossingsOfBetriebsstellenWithRailwayRoutePositionsForDS100, findStreckennutzungGeschwindigkeitForRailwayRouteNr } from './db-data'
+import { hasRouteClosure, computeDistanceOfKmI, findBetriebsstellenWithRailwayRoutePositionsForRailwayRouteNr } from './db-data'
 import type { StopWithRailwayRoutePositions, BetriebsstelleRailwayRoutePosition } from './db-data'
 
 /** assumes arr is ordered */
@@ -63,31 +63,6 @@ function addToGraph(g: Graph, bsOfK: BetriebsstelleRailwayRoutePosition, positio
     }
 }
 
-function createGraph(): Graph {
-    const g: Graph = {};
-    getDs100ValuesForCrossingsOfBetriebsstellenWithRailwayRoutePositions()
-        .forEach(k => {
-            if (!g[k]) g[k] = {};
-            findCrossingsOfBetriebsstellenWithRailwayRoutePositionsForDS100(k).forEach(bs => {
-                const speed = findStreckennutzungGeschwindigkeitForRailwayRouteNr(bs.STRECKE_NR);
-                const positions = findCrossingsOfBetriebsstellenWithRailwayRoutePositionsForRailwayRouteNr(bs.STRECKE_NR);
-                if (positions) {
-                    const bsOfK = positions.find(bsPos => bsPos.KUERZEL === k);
-                    if (bsOfK) addToGraph(g, bsOfK, positions, true, speed);
-                }
-            })
-            return false; // continue
-        })
-
-    const countNodes = Object.keys(g).length
-    const countEdges = Object.keys(g).reduce((accu, k) => {
-        accu += Object.keys(k).length;
-        return accu
-    }, 0);
-    console.log('createGraph: nodes', countNodes, ', edges', countEdges)
-    return g;
-}
-
 function addStopToGraph(g: Graph, bs: StopWithRailwayRoutePositions): void {
     if (g[bs.ds100_ref]) return;
 
@@ -96,9 +71,10 @@ function addStopToGraph(g: Graph, bs: StopWithRailwayRoutePositions): void {
         return;
     }
 
-    const positions = findCrossingsOfBetriebsstellenWithRailwayRoutePositionsForRailwayRouteNr(bs.streckenpositionen[0].STRECKE_NR);
+    const positions = findBetriebsstellenWithRailwayRoutePositionsForRailwayRouteNr(bs.streckenpositionen[0].STRECKE_NR)
+        .filter(bs => g[bs.KUERZEL] !== undefined);
     if (positions) {
-        console.log('add to graph',bs.ds100_ref); 
+        console.log('add to graph', bs.ds100_ref);
         g[bs.ds100_ref] = {};
         addToGraph(g, bs.streckenpositionen[0], positions, true);
     } else {
@@ -106,4 +82,4 @@ function addStopToGraph(g: Graph, bs: StopWithRailwayRoutePositions): void {
     }
 }
 
-export { createGraph, addStopToGraph, addToGraph }
+export { addStopToGraph, addToGraph }

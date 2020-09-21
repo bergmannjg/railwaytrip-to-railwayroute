@@ -2,7 +2,7 @@ import { setVerbose, setStrategy, findRailwayRoutesOfTrip, findRailwayRoutePosit
 
 beforeAll(() => {
     setVerbose(true);
-    setStrategy(true, false);
+    setStrategy(true);
 });
 
 test('test Norddeich Rheine', () => {
