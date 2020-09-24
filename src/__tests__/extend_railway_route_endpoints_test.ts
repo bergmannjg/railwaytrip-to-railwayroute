@@ -236,7 +236,7 @@ function addMaxSpeedForRailwayRouteNr(railwayRouteNr: number, arrBs: Betriebsste
 betriebsstelleRailwayRoutePositionOrig.forEach(bs => {
     const b: any = bs.GEOGR_BREITE;
     if (typeof b === "string") {
-        console.log('type error', bs.STRECKE_NR, bs.KUERZEL, bs.GEOGR_BREITE);
+        console.error('type error', bs.STRECKE_NR, bs.KUERZEL, bs.GEOGR_BREITE);
         bs.GEOGR_BREITE = 0;
     }
 })

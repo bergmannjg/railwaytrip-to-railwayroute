@@ -67,18 +67,17 @@ function addStopToGraph(g: Graph, bs: StopWithRailwayRoutePositions): void {
     if (g[bs.ds100_ref]) return;
 
     if (bs.streckenpositionen.length !== 1) {
-        console.log('error addStopToGraph, ds100', bs.ds100_ref, ', streckenpositionen anzahl ', bs.streckenpositionen.length);
+        console.error('error addStopToGraph, ds100', bs.ds100_ref, ', streckenpositionen anzahl ', bs.streckenpositionen.length);
         return;
     }
 
     const positions = findBetriebsstellenWithRailwayRoutePositionsForRailwayRouteNr(bs.streckenpositionen[0].STRECKE_NR)
         .filter(bs => g[bs.KUERZEL] !== undefined);
     if (positions) {
-        console.log('add to graph', bs.ds100_ref);
         g[bs.ds100_ref] = {};
         addToGraph(g, bs.streckenpositionen[0], positions, true);
     } else {
-        console.log('error addStopToGraph, strecke ', bs.streckenpositionen[0].STRECKE_NR);
+        console.error('error addStopToGraph, strecke ', bs.streckenpositionen[0].STRECKE_NR);
     }
 }
 

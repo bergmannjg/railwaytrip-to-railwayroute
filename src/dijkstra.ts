@@ -93,7 +93,7 @@ export class Dijkstra {
 
     if (typeof d !== 'undefined' && typeof costs[d] === 'undefined') {
       const msg = ['Could not find a path from ', s, ' to ', d, '.'].join('');
-      console.log(msg);
+      console.error(msg);
     }
 
     return predecessors;
