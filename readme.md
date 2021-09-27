@@ -4,6 +4,8 @@ Uses [open data](./db-data/readme.md) from Deutsche Bahn to match the [UIC stati
 
 Function *findRailwayRoutesOfTrip* in [db-data-railway-routes.ts](./src/db-data-railway-routes.ts).
 
+**[RInfData](https://github.com/bergmannjg/RInfData) is the follow up project** using data from the European Register of Railway Infrastructure.
+
 ## Example
 
 The trip from **8002549** (Hamburg) to **8000152** (Hannover) gives the following railway route numbers:
